@@ -2,4 +2,4 @@ import functions
 
 filepath = 'operations.json'
 
-print(functions.last_five_formatted(filepath))
+print(functions.show_last_five_formatted(filepath))
