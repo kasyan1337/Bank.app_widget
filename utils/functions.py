@@ -5,7 +5,11 @@ import json
 # import os
 # filepath = os.path.join(os.path.dirname(__file__), '..', 'operations.json')
 
-def last_five_raw(filepath):
+def get_last_five_raw(filepath):
+    """
+    :param filepath:
+    :return: list of last 5 transactions unformatted
+    """
     with open(filepath, 'r') as file:
         data = json.load(file)
 
@@ -18,6 +22,10 @@ def last_five_raw(filepath):
 
 
 def mask_card(card_info):
+    """
+    :param card_info:
+    :return: masked card info in format <card_name> <first 4 digits> ** **** <last 4 digits>
+    """
     number_str = str(card_info)
     number_digit_only = ''.join(filter(str.isdigit, number_str))
 
@@ -33,6 +41,10 @@ def mask_card(card_info):
 
 
 def mask_account(account_info):
+    """
+    :param account_info:
+    :return: masked account info in format <account_name> **<last 4 digits>
+    """
     parts = account_info.split()
 
     account_str = str(account_info)
@@ -46,22 +58,23 @@ def mask_account(account_info):
     return ' '.join(account_name) + ' **' + account_number_only[-4:]
 
 
-def last_five_formatted(filepath):
+def show_last_five_formatted(filepath):
     """
+    :param filepath:
+    :return: formatted last 5 transactions
     <дата перевода> <описание перевода>
     <откуда> -> <куда>
     <сумма перевода> <валюта>
-    :return:
     """
-    data = last_five_raw(filepath)
+    data = get_last_five_raw(filepath)
     formatted_output = []
 
-    for i in data:
-        date = datetime.datetime.strptime(i['date'], '%Y-%m-%dT%H:%M:%S.%f').strftime('%d.%m.%Y')
+    for transaction in data:
+        date = datetime.datetime.strptime(transaction['date'], '%Y-%m-%dT%H:%M:%S.%f').strftime('%d.%m.%Y')
 
-        from_account = i.get(
-            'from')  # some transactions don't have 'from' (deposits), used GET so it would return None
-        to_account = i['to']
+        # deposits don't have 'from' key, so we need to check if it exists before using it
+        from_account = transaction.get('from')
+        to_account = transaction['to']
 
         if from_account:
             if 'Счет' in from_account:
@@ -74,12 +87,14 @@ def last_five_formatted(filepath):
         else:
             to_account_formatted = mask_card(to_account)
 
-        description = i['description']
-        amount = i['operationAmount']['amount']
-        currency = i['operationAmount']['currency']['name']
+        description = transaction['description']
+        amount = transaction['operationAmount']['amount']
+        currency = transaction['operationAmount']['currency']['name']
 
         combined_str = f"{date} {description}\n"
-        if from_account:  # deposits don't have 'from'
+
+        # if from_account exists, add it to the string
+        if from_account:
             combined_str += f"{from_account_formatted} "
         combined_str += f"-> {to_account_formatted}\n{amount} {currency}\n"
 
